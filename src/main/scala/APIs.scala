@@ -8,6 +8,12 @@ import cats.implicits._
 
 import org.apache.spark.sql._
 
+/**
+ * API implementation
+ * 
+ * @author Raymond Tay
+ * @version 1.0
+ */
 trait APIs extends SparkTools {
 
   /**
