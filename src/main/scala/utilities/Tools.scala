@@ -19,11 +19,21 @@ trait SparkTools {
     Monad[Id].pure(session)
   }
 
+  /**
+   * Loads the csv as a DataFrame and returns a product type
+   * @param pathToFile
+   * @return 
+   */
   def loadCsv(pathToFile: java.io.File) : Kleisli[Dataset, Id[SparkSession], Row] =
     Kleisli{ (session: SparkSession) => 
       session.read.format("csv").option("header", true).load(pathToFile.getAbsolutePath)
     }
 
+  /**
+   * Loads the csv as a DataFrame and returns a product type
+   * @param pathToFile
+   * @return a 2-tuple
+   */
   def loadCsv2(pathToFile: java.io.File) =
     Kleisli{ (session: SparkSession) => 
       Monad[Id].product(
