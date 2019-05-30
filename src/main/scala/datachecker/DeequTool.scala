@@ -10,8 +10,12 @@ import com.amazon.deequ.profiles.{ColumnProfilerRunner, ColumnProfilerRunBuilder
 
 import org.apache.spark.sql._
 
-// Default trait where all `deequ` APIs might be explored
-//
+/**
+ * Default trait where all `deequ` APIs might be explored
+ *
+ * @author Raymond Tay
+ * @version 1.0
+ */
 trait DeequTools {
 
   /**

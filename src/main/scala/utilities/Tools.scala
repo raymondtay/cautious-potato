@@ -6,8 +6,11 @@ import cats.implicits._
 
 import org.apache.spark.sql.{DataFrame, Dataset, SparkSession, Row}
 
-// Everything related to Apache Spark ☺ ; abstractions are expressed as Monads
-//
+/**
+ * Everything related to Apache Spark ☺ ; abstractions are expressed as Monads
+ * @author Raymond Tay
+ * @version 1.0
+ */
 trait SparkTools {
 
   def getSparkSession : Kleisli[Id, String, SparkSession] = Kleisli{ (workingSpace: String) => 
