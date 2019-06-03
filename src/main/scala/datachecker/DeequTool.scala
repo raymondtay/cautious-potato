@@ -43,7 +43,7 @@ trait DeequTools {
   def getStatsForColumn(col: Column) = Reader { (df: DataFrame) =>
     val result = profileAllColumns(df) >>= runProfile.run
     val profileColumn = result.profiles(col.toString).asInstanceOf[NumericColumnProfile]
-    println(s"Statistics of 'count':\n" +
+    println(s"Statistics of '${col.toString}':\n" +
       s"\tminimum: ${profileColumn.minimum.get}\n" +
       s"\tmaximum: ${profileColumn.maximum.get}\n" +
       s"\tmean: ${profileColumn.mean.get}\n" +
