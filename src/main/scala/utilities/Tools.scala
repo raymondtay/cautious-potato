@@ -3,7 +3,8 @@ package thalesdigital.io.utilities
 import cats._
 import cats.data._
 import cats.implicits._
-
+import scala.concurrent._
+import scala.concurrent.duration._
 import org.apache.spark.sql.{DataFrame, Dataset, SparkSession, Row}
 
 /**
@@ -44,10 +45,22 @@ trait SparkTools {
        session)
     }
 
+  /**
+   * Closes the [[SparkContext]] immediately
+   * @param 2-tuple
+   * @return Unit
+   */
   def closeSession = Reader{ (pair: (DataFrame, SparkSession)) => pair._2.close() }
 
-  def closeSessionAfterAction(f: DataFrame => Unit) =
-    Reader{ (pair: (DataFrame, SparkSession)) => f(pair._1); pair._2.close() }
+  /**
+   * Closes the [[SparkContext]] immediately after running the action "f".
+   * @param f a function which consumes a [[DataFrame]] and returns a result of type [[A]].
+   * @return Unit
+   */
+  def closeSessionAfterAction[A](f: DataFrame => A) : Reader[(DataFrame,SparkSession), A] =
+    Reader{ (pair: (DataFrame, SparkSession)) => Monad[Id].pure(f(pair._1)) >>= {(result: A) => pair._2.close(); result} }
+    //Reader{ (pair: (DataFrame, SparkSession)) => Monad[Id].pure(f(pair._1)) >>= {(result: A) => pair._2.close(); result} }
+    //Reader{ (pair: (DataFrame, SparkSession)) => val result = f(pair._1); pair._2.close(); result }
 
 }
 

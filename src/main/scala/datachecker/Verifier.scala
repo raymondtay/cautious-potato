@@ -21,17 +21,27 @@ import org.apache.spark.sql._
  */
 trait DataVerifier {
 
-  val defaultVerifier : Reader[DataFrame, VerificationRunBuilder] =
+  /**
+   * Builds a default Verification Suite Runner which you can use to build
+   * higher-order combinators.
+   *
+   * @param df DataFrame
+   * @return an instance of the [[VerificationRunBuilder]]
+   */
+  def defaultVerifier : Reader[DataFrame, VerificationRunBuilder] =
     Reader{
       (df: DataFrame) =>
         var builder = VerificationSuite().onData(df)
         builder
     }
- 
-  //def addConstraints = Reader{ (runner: VerificationRunBuilder) => 
-  //  
-  //}
 
+  /**
+   * State machine used for building up the checks.
+   *
+   * @param check either a [[Check]] or [[Constraint]]
+   * @param builder an instance of the builder you are trying to leverage by
+   * "adding" checks and constraints to it.
+   */
   def addConstraint(check: Check) : State[VerificationRunBuilder, VerificationRunBuilder] =
     State{ (builder: VerificationRunBuilder) => 
       (builder.addCheck(check), builder)
