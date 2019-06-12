@@ -10,6 +10,8 @@ object Main extends App with APIs with DeequTools {
 
   import cats._, cats.data._, cats.implicits._
 
+  val defaultTracerName = args(0)
+
   /* Uncomment the following iff you just want to load the csv, resources
    * released implicitly.
    **/
@@ -31,9 +33,23 @@ object Main extends App with APIs with DeequTools {
       .hasSize(_ == 20640)
       .isComplete("housing_median_age")
 
+  // 1. Non-trace
+  // Either.catchNonFatal{
+  //   val result = 
+  //     loadCsvEffectNClose(
+  //       sys.env("TMPDIR"),
+  //       "src/main/resources/good_data.csv",
+  //       runDataWithChecks(check).run
+  //     )
+  //   println(s"""
+  //    Result of verification: ${result.status}
+  //   """)
+  // }
+
+  // 2. Traced execution
   Either.catchNonFatal{
     val result = 
-      loadCsvEffectNClose(
+      traceLoadCsvEffectNClose(
         sys.env("TMPDIR"),
         "src/main/resources/good_data.csv",
         runDataWithChecks(check).run
@@ -42,6 +58,8 @@ object Main extends App with APIs with DeequTools {
      Result of verification: ${result.status}
     """)
   }
+
+ Thread.sleep(5000)
  
 }
 

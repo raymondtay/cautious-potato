@@ -32,6 +32,7 @@ object Dependencies {
   val specs2Libscalacheck  = "org.specs2"   %% "specs2-scalacheck"  % specs2Version % Test
 
   import SparkDependencies._
+  import TracingDependencies._
 
   val myLibraryDependencies =
     sparkLibs ++
@@ -40,7 +41,17 @@ object Dependencies {
        specs2Lib ::
        deequLib ::
        catsCoreLib ::
-       Nil)
+       Nil) ++ jaegarLibs
+
+}
+
+object TracingDependencies {
+
+  val jaegarVersion = "0.35.5"
+
+  val jaegarLibs =
+    "io.jaegertracing" % "jaeger-core" % jaegarVersion ::
+    "io.jaegertracing" % "jaeger-client" % jaegarVersion :: Nil
 
 }
 

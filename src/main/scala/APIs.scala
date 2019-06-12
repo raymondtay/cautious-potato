@@ -1,13 +1,19 @@
 package thalesdigital.io.app
 
-import thalesdigital.io.utilities.SparkTools
+import thalesdigital.io.utilities._
 import thalesdigital.io.datachecker.{DataVerifier, DeequTools}
+import thalesdigital.io.tracer._
 
 import cats._
 import cats.data._
 import cats.implicits._
 
 import org.apache.spark.sql._
+
+import io.opentracing.Scope
+import io.opentracing.Span
+import io.opentracing.Tracer
+
 
 import com.amazon.deequ.{VerificationResult, VerificationSuite, VerificationRunBuilder}
 import com.amazon.deequ.checks._
@@ -19,7 +25,7 @@ import com.amazon.deequ.constraints._
  * @author Raymond Tay
  * @version 1.0
  */
-trait APIs extends SparkTools with DataVerifier {
+trait APIs extends SparkTools with DataVerifier with GloblTracer {
 
   /**
    * Attempts to load the CSV into memory using the workspace provided.
@@ -30,6 +36,9 @@ trait APIs extends SparkTools with DataVerifier {
    */
   def loadCsv(dir: String, csv: String) : DataFrame = getSparkSession(dir) >>= loadCsv(new java.io.File(csv)).run
 
+  def loadCsvT(dir: String, csv: String)(span: Span) : DataFrame = getSparkSession(dir) >>= loadCsv(new java.io.File(csv)).run
+
+  def traceLoadCsv(dir: String, csv: String) = traceRun(loadCsvT)(dir)(csv)("load-csv")
 
   /**
    * Attempts to load the CSV into memory using the workspace provided.
@@ -51,6 +60,29 @@ trait APIs extends SparkTools with DataVerifier {
    */
   def loadCsvEffectNClose[A](dir: String, csv: String, f: DataFrame => A) : A = getSparkSession(dir) >>= loadCsv2(new java.io.File(csv)).run >>= closeSessionAfterAction(f).run
 
+  /**
+   * Attempts to load the CSV into memory using the workspace provided,
+   * processes the loaded CSV data via the function `f`. All actions are
+   * traced and reported to the Jaeger server sitting in the network.
+   * Note: SparkSession is closed explicitly.
+   *
+   * @param dir working space
+   * @param csv path to csv
+   * @param f function that processes the loaded CSV data
+   * @param span the active [[Span]] provided to house the metrics
+   */
+  def loadCsvEffectNCloseT[A](dir: String, csv: String, f: DataFrame => A)(span: Span) : A = {
+    logEvent("event", "Load CSV")(span) *>
+      getSparkSession(dir) >>=
+        logEventWithOutcome[SparkSession]("event", "Obtained SparkSession", span).run *>
+          loadCsv2(new java.io.File(csv)).run >>=
+            logEventWithOutcome[(DataFrame,SparkSession)]("event", "CSV is loaded into Memory.", span).run *>
+              closeSessionAfterAction(f).run >>=
+                logEventWithOutcome[A]("event", "CSV is loaded validated by deequ.", span).run
+  }
+
+  def traceLoadCsvEffectNClose[A](dir: String, csv: String, f: DataFrame => A) : A =
+    traceRun2(loadCsvEffectNCloseT[A])(dir)(csv)(f)("Load CSV Validation Service")
 
   /**
    * Builds a default VerificationRunBuilder and adds constraints and checks to
