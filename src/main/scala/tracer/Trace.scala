@@ -13,6 +13,9 @@ import org.apache.spark.sql._
 
 import cats._, data._, implicits._
 
+import com.amazon.deequ.analyzers.runners.AnalyzerContext
+import com.amazon.deequ.metrics.Metric
+
 /**
  * Extend from this trait if you wish to have a global tracer acquired for
  * your application
@@ -60,7 +63,7 @@ trait GloblTracer {
    * @param span the current active span
    * @return
    */
-  def logEvent(event: String, eventInfo: String) =
+  def logEvent(event: String, eventInfo: String) : Reader[Span, Unit] =
     Reader { (span: Span) => 
       import scala.collection.JavaConverters._
       Applicative[Id].map(span)( (s:Span) => s.log(Map(event -> eventInfo).asJava))
@@ -79,6 +82,31 @@ trait GloblTracer {
   def logEventWithOutcome[A](event: String, eventInfo: String, span: Span) =
     Reader { (outcome: A) => 
       logEvent(event, eventInfo).run(span) *> outcome
+    }
+
+  /**
+   * Sends the metric information contained in the [[AnalyzerContext]]
+   * to the opentracing logger seated in the environment.
+   *
+   * @param event key name to be displayed for this span
+   * @param eventInfo description of the event
+   * @param span the current active span
+   * @param outcome something to carry along
+   * @return
+   */
+  def logMetrics(label: String)(implicit tracer: Tracer) =
+    Reader{ (ctx: AnalyzerContext) =>
+      val span = startSpan(label)(tracer)
+      val childSpan = tracer.buildSpan("Send metrics").asChildOf(span).start
+      val id = java.util.UUID.randomUUID
+      logEvent(s"event-${id}", s"About to send ${ctx.allMetrics.size} metrics to logger...")(childSpan)
+
+      // the metrics are a lazy stream, so reify it
+      ctx.allMetrics.toList.zipWithIndex.map((p: (Metric[_], Int)) => logEvent(s"metric-${p._2}", p._1.toString)(childSpan))
+
+      logEvent(s"event-${id}", "All metrics sent.")(childSpan)
+      childSpan.finish
+      span.finish
     }
 
   /**

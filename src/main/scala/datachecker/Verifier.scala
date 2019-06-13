@@ -8,6 +8,11 @@ import com.amazon.deequ.{VerificationSuite, VerificationRunBuilder}
 import com.amazon.deequ.checks._
 import com.amazon.deequ.constraints._
 import com.amazon.deequ.profiles.{ColumnProfilerRunner, ColumnProfilerRunBuilder, NumericColumnProfile}
+import com.amazon.deequ.analyzers.runners.{AnalysisRunner, AnalyzerContext}
+import com.amazon.deequ.analyzers.runners.AnalyzerContext.successMetricsAsDataFrame
+import com.amazon.deequ.analyzers.{Analyzer, Analysis}
+import com.amazon.deequ.metrics.{Metric}
+
 
 import org.apache.spark.sql._
 
@@ -45,6 +50,16 @@ trait DataVerifier {
   def addConstraint(check: Check) : State[VerificationRunBuilder, VerificationRunBuilder] =
     State{ (builder: VerificationRunBuilder) => 
       (builder.addCheck(check), builder)
+    }
+
+  /**
+   * A state machine to allow you to keep adding analyzers
+   * @param anlysis Analyzer
+   * @return 
+   */
+  def addAnalyzer(analyzer : Analyzer[_, Metric[_]]) : State[Analysis, Analysis] =
+    State { (builder: Analysis) => 
+      (builder.addAnalyzer(analyzer), builder)
     }
 
 }

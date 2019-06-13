@@ -3,6 +3,7 @@ package thalesdigital.io.app
 
 import com.amazon.deequ.checks._
 import com.amazon.deequ.constraints._
+import com.amazon.deequ.analyzers.{Analysis, ApproxCountDistinct, Completeness, Mean, Correlation, Compliance, InMemoryStateProvider, Size, DoubleValuedState}
 import thalesdigital.io.datachecker.DeequTools
 import org.apache.spark.sql._
 
@@ -46,17 +47,36 @@ object Main extends App with APIs with DeequTools {
   //   """)
   // }
 
-  // 2. Traced execution
+  // 2. Traced execution with running data-validation
+  //    and sending the final results to OpenTracing logger
+  //Either.catchNonFatal{
+  //  val result = 
+  //    traceLoadCsvEffectNClose(
+  //      sys.env("TMPDIR"),
+  //      "src/main/resources/good_data.csv",
+  //      runDataWithChecks(check).run
+  //    )
+  //  println(s"""
+  //   Result of verification: ${result.status}
+  //  """)
+  //}
+
+  // 3. Traced execution together with running data-analysis
+  //    and sending the final results to OpenTracing logger
+  val analyzer : Analysis =
+    buildAnalyzers(Size(),
+      ApproxCountDistinct("housing_median_age"),
+      Completeness("housing_median_age"),
+      Completeness("longitude"),
+      Completeness("latitude")).run(Analysis())
+
   Either.catchNonFatal{
     val result = 
       traceLoadCsvEffectNClose(
         sys.env("TMPDIR"),
         "src/main/resources/good_data.csv",
-        runDataWithChecks(check).run
+        runDataWithAnalyzers(analyzer).run
       )
-    println(s"""
-     Result of verification: ${result.status}
-    """)
   }
 
  Thread.sleep(5000)

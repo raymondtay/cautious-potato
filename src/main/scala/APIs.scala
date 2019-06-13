@@ -18,6 +18,9 @@ import io.opentracing.Tracer
 import com.amazon.deequ.{VerificationResult, VerificationSuite, VerificationRunBuilder}
 import com.amazon.deequ.checks._
 import com.amazon.deequ.constraints._
+import com.amazon.deequ.analyzers.{Analyzer, Analysis}
+import com.amazon.deequ.analyzers.runners.{AnalyzerContext, AnalysisRunner}
+import com.amazon.deequ.metrics.{Metric}
 
 /**
  * API implementation
@@ -96,6 +99,25 @@ trait APIs extends SparkTools with DataVerifier with GloblTracer {
   def runDataWithChecks(checks: Check*) : Reader[DataFrame, VerificationResult] =
     Reader{ (df: DataFrame) => checks.foldLeft(defaultVerifier(df))((builder, e) => addConstraint(e).runS(builder).value).run }
 
+  /**
+   * Runs the data analysis based on the analyzer passed in
+   * @param analyzer an [[Analysis]] object populated with analyzers
+   * @param df [[DataFrame]] object
+   * @return result
+   */
+  def runDataWithAnalyzers(analyzer: Analysis) : Reader[DataFrame, Unit] =
+    Reader{ (df: DataFrame) => Monad[Id].pure(analyzer.run(df)) >>= logMetrics("MetricsReporter").run }
+
+  /**
+   * Builds a default Analysis via the list of Analyzers 
+   * Note: It does not run this against the data yet
+   *
+   * @param alysis the analysis object
+   * @param xs the list of analyzers you want to run this data against
+   * @return the final Analysis object, after adding these analyzers
+   */
+  def buildAnalyzers(xs : Analyzer[_, Metric[_]]*) : Reader[Analysis, Analysis] =
+    Reader{ (alysis: Analysis) => xs.foldLeft(alysis)((builder, e) => addAnalyzer(e).runS(builder).value) }
 }
 
 

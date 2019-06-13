@@ -58,7 +58,9 @@ trait SparkTools {
    * @return Unit
    */
   def closeSessionAfterAction[A](f: DataFrame => A) : Reader[(DataFrame,SparkSession), A] =
-    Reader{ (pair: (DataFrame, SparkSession)) => pair.bimap(f(_), _.close())._1 }
+    Reader{ (pair: (DataFrame, SparkSession)) =>
+      Applicative[Id].lift((df: DataFrame) => f(df))(pair._1) >>= Monad[Id].lift{(result: A) => pair._2.close(); result}
+    }
 
 }
 
