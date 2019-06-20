@@ -4,10 +4,10 @@ package thalesdigital.io.app
 import com.amazon.deequ.checks._
 import com.amazon.deequ.constraints._
 import com.amazon.deequ.analyzers.{Analysis, ApproxCountDistinct, Completeness, Mean, Correlation, Compliance, InMemoryStateProvider, Size, DoubleValuedState}
-import thalesdigital.io.datachecker.DeequTools
+import thalesdigital.io.deequ._
 import org.apache.spark.sql._
 
-object Main extends App with APIs with DeequTools {
+object Main extends App with APIs {
 
   import cats._, cats.data._, cats.implicits._
 
@@ -70,12 +70,23 @@ object Main extends App with APIs with DeequTools {
       Completeness("longitude"),
       Completeness("latitude")).run(Analysis())
 
+  //Either.catchNonFatal{
+  //  val result = 
+  //    traceLoadCsvEffectNClose(
+  //      sys.env("TMPDIR"),
+  //      "src/main/resources/good_data.csv",
+  //      runDataWithAnalyzers(analyzer).run
+  //    )
+  //}
+
+  // 4. Non-traced execution of conducting checks and storing the metrics to
+  //    local file storage
   Either.catchNonFatal{
     val result = 
       traceLoadCsvEffectNClose(
         sys.env("TMPDIR"),
         "src/main/resources/good_data.csv",
-        runDataWithAnalyzers(analyzer).run
+        runDataWithChecksNStorage("metrics.json", Map("tag" -> "repositoryExample"), check).run
       )
   }
 

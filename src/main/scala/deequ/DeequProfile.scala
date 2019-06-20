@@ -1,4 +1,4 @@
-package thalesdigital.io.datachecker
+package thalesdigital.io.deequ
 
 import cats._
 import cats.data._
@@ -16,7 +16,7 @@ import org.apache.spark.sql._
  * @author Raymond Tay
  * @version 1.0
  */
-trait DeequTools {
+trait DeequProfile {
 
   /**
    * Profile all columns, should be careful not to profile data columns if you

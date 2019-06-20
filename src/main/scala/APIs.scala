@@ -1,7 +1,7 @@
 package thalesdigital.io.app
 
 import thalesdigital.io.utilities._
-import thalesdigital.io.datachecker.{DataVerifier, DeequTools}
+import thalesdigital.io.deequ.{DeequVerifier, DeequProfile, DeequMetricRepository, ResultKeyBuilder}
 import thalesdigital.io.tracer._
 
 import cats._
@@ -15,7 +15,7 @@ import io.opentracing.Span
 import io.opentracing.Tracer
 
 
-import com.amazon.deequ.{VerificationResult, VerificationSuite, VerificationRunBuilder}
+import com.amazon.deequ.{VerificationResult, VerificationSuite, VerificationRunBuilderWithRepository, VerificationRunBuilder}
 import com.amazon.deequ.checks._
 import com.amazon.deequ.constraints._
 import com.amazon.deequ.analyzers.{Analyzer, Analysis}
@@ -28,7 +28,11 @@ import com.amazon.deequ.metrics.{Metric}
  * @author Raymond Tay
  * @version 1.0
  */
-trait APIs extends SparkTools with DataVerifier with GloblTracer {
+trait APIs extends SparkTools
+        with DeequVerifier
+        with DeequProfile
+        with DeequMetricRepository
+        with GloblTracer {
 
   /**
    * Attempts to load the CSV into memory using the workspace provided.
@@ -107,6 +111,26 @@ trait APIs extends SparkTools with DataVerifier with GloblTracer {
    */
   def runDataWithAnalyzers(analyzer: Analysis) : Reader[DataFrame, Unit] =
     Reader{ (df: DataFrame) => Monad[Id].pure(analyzer.run(df)) >>= logMetrics("MetricsReporter").run }
+
+  /**
+   * Builds a default VerificationRunBuilder and adds constraints and checks to
+   * it with the intention of running the checks against them.
+   *
+   * Reports the final result
+   * @param checks An list or array of [[Check]] and/or [[Constraint]]
+   * @param df DataFrame to run them against
+   * @return the verification result
+   */
+  def runDataWithChecksNStorage(metricFileName: String, prop: Map[String,String], checks: Check*) : Reader[DataFrame, VerificationResult] =
+    Reader{ (df: DataFrame) =>
+      val builder = checks.foldLeft(defaultVerifier(df))((builder, e) => addConstraint(e).runS(builder).value)
+      val verifier =
+        getSparkSession(sys.env("TMPDIR")) >>=
+          useLocalMetricRepository(metricFileName).run >>=
+            useRepositoryOnRunner.run
+    
+      (verifier.runA(builder) >>= saveMetricsToRepository(prop)(new ResultKeyBuilder{}).runS).value.run
+    }
 
   /**
    * Builds a default Analysis via the list of Analyzers 

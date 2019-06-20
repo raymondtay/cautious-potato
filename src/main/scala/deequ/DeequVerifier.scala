@@ -1,4 +1,4 @@
-package thalesdigital.io.datachecker
+package thalesdigital.io.deequ
 
 import cats._
 import cats.data._
@@ -24,7 +24,7 @@ import org.apache.spark.sql._
  * @author Raymond Tay
  * @version 1.0
  */
-trait DataVerifier {
+trait DeequVerifier {
 
   /**
    * Builds a default Verification Suite Runner which you can use to build
