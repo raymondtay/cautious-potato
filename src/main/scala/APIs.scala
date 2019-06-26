@@ -104,6 +104,27 @@ trait APIs extends SparkTools
     Reader{ (df: DataFrame) => checks.foldLeft(defaultVerifier(df))((builder, e) => addConstraint(e).runS(builder).value).run }
 
   /**
+   * Sends the [[VerificationResult]] to a external Logging facility
+   * Note: The data records are flattened and sent out to the logger
+   *       so that the developer can understand the details.
+   * @param vr results of the verification process
+   * @return
+   */
+  def sendVerificationResultToLogstore(implicit tracer: Tracer) =
+    Reader { (vr: VerificationResult) => 
+      getSparkSession(sys.env("TMPDIR")) >>=
+        ((session: SparkSession) => VerificationResult.successMetricsAsDataFrame(session, vr)) >>=
+          ((df: DataFrame) => {
+            println("----->" + tracer.activeSpan)
+            val span : Span = tracer.buildSpan("VerificationResult").asChildOf(tracer.activeSpan).start
+            df.show()
+            logEvent("Result of Data Verification", s"""${df.collect().mkString("\n")}""")(span)
+            span.finish
+          })
+          vr
+    }
+
+  /**
    * Runs the data analysis based on the analyzer passed in
    * @param analyzer an [[Analysis]] object populated with analyzers
    * @param df [[DataFrame]] object

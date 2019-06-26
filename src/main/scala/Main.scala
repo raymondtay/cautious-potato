@@ -49,17 +49,13 @@ object Main extends App with APIs {
 
   // 2. Traced execution with running data-validation
   //    and sending the final results to OpenTracing logger
-  //Either.catchNonFatal{
-  //  val result = 
-  //    traceLoadCsvEffectNClose(
-  //      sys.env("TMPDIR"),
-  //      "src/main/resources/good_data.csv",
-  //      runDataWithChecks(check).run
-  //    )
-  //  println(s"""
-  //   Result of verification: ${result.status}
-  //  """)
-  //}
+  Either.catchNonFatal{
+      traceLoadCsvEffectNClose(
+        sys.env("TMPDIR"),
+        "src/main/resources/bad_data.csv",
+        runDataWithChecks(check).run andThen sendVerificationResultToLogstore.run
+      )
+  }
 
   // 3. Traced execution together with running data-analysis
   //    and sending the final results to OpenTracing logger
@@ -81,14 +77,14 @@ object Main extends App with APIs {
 
   // 4. Non-traced execution of conducting checks and storing the metrics to
   //    local file storage
-  Either.catchNonFatal{
-    val result = 
-      traceLoadCsvEffectNClose(
-        sys.env("TMPDIR"),
-        "src/main/resources/good_data.csv",
-        runDataWithChecksNStorage("metrics.json", Map("tag" -> "repositoryExample"), check).run
-      )
-  }
+  //Either.catchNonFatal{
+  //  val result = 
+  //    traceLoadCsvEffectNClose(
+  //      sys.env("TMPDIR"),
+  //      "src/main/resources/bad_data.csv",
+  //      runDataWithChecksNStorage("metrics.json", Map("tag" -> "repositoryExample"), check).run
+  //    )
+  //}
 
  Thread.sleep(5000)
  
