@@ -28,11 +28,20 @@ object Main extends App with APIs {
   //    getStatsForAllColumns.run *> getStatsForColumn(col("housing_median_age")).run )
   //)
 
-  // This check is guaranteed to be successful.
+  // A check that represents what the developer expects the data to exhibit.
   val check =
     Check(CheckLevel.Error, "unit testing my data")
-      .hasSize(_ == 20640)
+      .hasSize(_ == 50)
+      .isComplete("longitude")
+      .isComplete("latitude")
       .isComplete("housing_median_age")
+      .isComplete("total_rooms")
+      .isComplete("total_bedrooms")
+      .isComplete("population")
+      .isComplete("households")
+      .isComplete("median_income")
+      .isComplete("median_house_value")
+      .isComplete("ocean_proximity")
 
   // 1. Non-trace
   // Either.catchNonFatal{

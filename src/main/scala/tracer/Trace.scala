@@ -33,24 +33,28 @@ trait GloblTracer {
 
   def startSpan(label: String) = Applicative[Id].lift((t: Tracer) => t.buildSpan(label).start)
 
+  def startScope(label: String) = Applicative[Id].lift((t: Tracer) => t.buildSpan(label).startActive(true))
+
   def closeSpan(span: Span) = Reader{ (df: DataFrame) =>
     span.finish
     df
   }
 
-  def traceRun[A, B, C]( f: (A, B) => Span => C)(a: A)(b: B)(label: String)(implicit tracer: Tracer) = {
-    val span : Span = startSpan(label)(tracer)
+  def traceRun[A, B, C](f: (A, B, Span) => C)(a: A)(b: B)(label: String)(implicit tracer: Tracer) = {
+    val scope : Scope = startScope(label)(tracer)
+    val span = scope.span
     val childSpan = tracer.buildSpan("Running effect").asChildOf(span).start
-    val outcome = f(a, b)(childSpan)
+    val outcome = Apply[Id].map3(a, b, childSpan)(f)
     childSpan.finish
     span.finish
     outcome
   }
 
-  def traceRun2[A, B, C, D]( f: (A, B, (DataFrame => C)) => Span => D)(a: A)(b: B)(g: DataFrame => C)(label: String)(implicit tracer: Tracer) = {
-    val span : Span = startSpan(label)(tracer)
+  def traceRun2[A, B, C, D]( f: (A, B, Span, (DataFrame => C)) => D)(a: A)(b: B)(g: DataFrame => C)(label: String)(implicit tracer: Tracer) = {
+    val scope = startScope(label)(tracer)
+    val span = scope.span
     val childSpan = tracer.buildSpan("Running effect").asChildOf(span).start
-    val outcome = f(a, b, g)(childSpan)
+    val outcome = Apply[Id].map4(a, b, childSpan, g)(f)
     childSpan.finish
     span.finish
     outcome

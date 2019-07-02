@@ -29,10 +29,10 @@ import com.amazon.deequ.metrics.{Metric}
  * @version 1.0
  */
 trait APIs extends SparkTools
-        with DeequVerifier
-        with DeequProfile
-        with DeequMetricRepository
-        with GloblTracer {
+            with DeequVerifier
+            with DeequProfile
+            with DeequMetricRepository
+            with GloblTracer {
 
   /**
    * Attempts to load the CSV into memory using the workspace provided.
@@ -43,7 +43,7 @@ trait APIs extends SparkTools
    */
   def loadCsv(dir: String, csv: String) : DataFrame = getSparkSession(dir) >>= loadCsv(new java.io.File(csv)).run
 
-  def loadCsvT(dir: String, csv: String)(span: Span) : DataFrame = getSparkSession(dir) >>= loadCsv(new java.io.File(csv)).run
+  def loadCsvT(dir: String, csv: String, span: Span) : DataFrame = getSparkSession(dir) >>= loadCsv(new java.io.File(csv)).run
 
   def traceLoadCsv(dir: String, csv: String) = traceRun(loadCsvT)(dir)(csv)("load-csv")
 
@@ -78,7 +78,7 @@ trait APIs extends SparkTools
    * @param f function that processes the loaded CSV data
    * @param span the active [[Span]] provided to house the metrics
    */
-  def loadCsvEffectNCloseT[A](dir: String, csv: String, f: DataFrame => A)(span: Span) : A = {
+  def loadCsvEffectNCloseT[A](dir: String, csv: String, span: Span, f: DataFrame => A) : A = {
     logEvent("event", "Load CSV")(span) *>
       getSparkSession(dir) >>=
         logEventWithOutcome[SparkSession]("event", "Obtained SparkSession", span).run *>
@@ -88,6 +88,16 @@ trait APIs extends SparkTools
                 logEventWithOutcome[A]("event", "CSV is loaded validated by deequ.", span).run
   }
 
+  /**
+   * Trace the execution from the obtaining of the Spark session object,
+   * loading the CSV datafile to the part where a side-effect function is being
+   * executed.
+   *
+   * @param dir working directory
+   * @param csv path to the CSV data file
+   * @param f side-effect function to run
+   * @return
+   */
   def traceLoadCsvEffectNClose[A](dir: String, csv: String, f: DataFrame => A) : A =
     traceRun2(loadCsvEffectNCloseT[A])(dir)(csv)(f)("Load CSV Validation Service")
 
@@ -110,16 +120,21 @@ trait APIs extends SparkTools
    * @param vr results of the verification process
    * @return
    */
-  def sendVerificationResultToLogstore(implicit tracer: Tracer) =
+  def sendVerificationResultToLogstore(implicit tracer : Tracer) =
     Reader { (vr: VerificationResult) => 
       getSparkSession(sys.env("TMPDIR")) >>=
         ((session: SparkSession) => VerificationResult.successMetricsAsDataFrame(session, vr)) >>=
           ((df: DataFrame) => {
-            println("----->" + tracer.activeSpan)
-            val span : Span = tracer.buildSpan("VerificationResult").asChildOf(tracer.activeSpan).start
+            val cSpan : Span = tracer.buildSpan("VerificationResult").asChildOf(tracer.activeSpan).start
             df.show()
-            logEvent("Result of Data Verification", s"""${df.collect().mkString("\n")}""")(span)
-            span.finish
+            val resultsForAllConstraints = vr.checkResults.flatMap { case (_, checkResult) => checkResult.constraintResults }
+            var buffer = collection.mutable.ListBuffer.empty[String]
+            resultsForAllConstraints
+              .filter { _.status != ConstraintStatus.Success }
+              .foreach { result => buffer += s"${result.constraint}: ${result.message.get}" }
+
+            logEvent("Result of Data Verification", buffer.toList.mkString("\n"))(cSpan)
+            cSpan.finish
           })
           vr
     }
