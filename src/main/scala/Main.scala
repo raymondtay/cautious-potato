@@ -13,20 +13,7 @@ object Main extends App with APIs {
 
   val defaultTracerName = args(0)
 
-  /* Uncomment the following iff you just want to load the csv, resources
-   * released implicitly.
-   **/
-  // Either.catchNonFatal(
-  //   runApiNClose(sys.env("TMPDIR"), "src/main/resources/housing.csv")
-  // )
-
   import functions._
-  //Either.catchNonFatal(
-  //  loadCsvEffectNClose(
-  //    sys.env("TMPDIR"),
-  //    "src/main/resources/good_data.csv",
-  //    getStatsForAllColumns.run *> getStatsForColumn(col("housing_median_age")).run )
-  //)
 
   // A check that represents what the developer expects the data to exhibit.
   val check =
@@ -42,19 +29,6 @@ object Main extends App with APIs {
       .isComplete("median_income")
       .isComplete("median_house_value")
       .isComplete("ocean_proximity")
-
-  // 1. Non-trace
-  // Either.catchNonFatal{
-  //   val result = 
-  //     loadCsvEffectNClose(
-  //       sys.env("TMPDIR"),
-  //       "src/main/resources/good_data.csv",
-  //       runDataWithChecks(check).run
-  //     )
-  //   println(s"""
-  //    Result of verification: ${result.status}
-  //   """)
-  // }
 
   // 2. Traced execution with running data-validation
   //    and sending the final results to OpenTracing logger
