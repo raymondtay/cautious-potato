@@ -10,3 +10,7 @@ libraryDependencies ++= myLibraryDependencies
 
 scalacOptions += "-Ypartial-unification"
 
+enablePlugins(TutPlugin)
+
+tutTargetDirectory := baseDirectory.value / "docs"
+
