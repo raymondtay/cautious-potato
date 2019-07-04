@@ -11,7 +11,7 @@ import org.apache.spark.sql._
  * Run this demo to see how to run profiling leveraging deequ on good datasets.
  * There are two effects at play here:
  * (a) Obtains all statistics for all columns
- * (b) Obtains the statistic for a single column
+ * (b) Obtains the statistic for a single column, in this case its "housing_median_age"
  *
  * @author Raymond Tay
  * @version 1.0
