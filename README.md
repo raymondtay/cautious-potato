@@ -1,5 +1,7 @@
 # Cautious Potato
 
+![Cats Friendly Badge](https://typelevel.org/cats/img/cats-badge-tiny.png) 
+
 What i am really here to discuss is to leverage a tool to discover some realities
 about our data, especially more so when we start using Apache Spark and its
 bretheren [Databricks](https://databricks.com) by investigating the kinds of

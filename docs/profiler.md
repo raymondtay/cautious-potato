@@ -1,6 +1,8 @@
 
 ### Demonstration of Profiling Apache Dataframes
 
+![Cats Friendly Badge](https://typelevel.org/cats/img/cats-badge-tiny.png) 
+
 Here is how to use it to profile all the columns of the data
 
 The data we are looking at looks like the following where the headers of the

@@ -1,5 +1,7 @@
 ### Demonstration of verifying data (at runtime) for Apache Dataframe
 
+![Cats Friendly Badge](https://typelevel.org/cats/img/cats-badge-tiny.png) 
+
 The data we are looking at looks like the following where the headers of the
 CSV formatted file occupies the first line, the data lined up later.
 
