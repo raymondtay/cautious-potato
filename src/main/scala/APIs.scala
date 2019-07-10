@@ -16,9 +16,13 @@ import io.opentracing.Tracer
 
 
 import com.amazon.deequ.{VerificationResult, VerificationSuite, VerificationRunBuilderWithRepository, VerificationRunBuilder}
+import com.amazon.deequ.repository._
+import com.amazon.deequ.anomalydetection._
+import com.amazon.deequ.repository.memory._
 import com.amazon.deequ.checks._
+import com.amazon.deequ.checks.CheckStatus._
 import com.amazon.deequ.constraints._
-import com.amazon.deequ.analyzers.{Analyzer, Analysis}
+import com.amazon.deequ.analyzers.{Analyzer, Analysis, State => DState}
 import com.amazon.deequ.analyzers.runners.{AnalyzerContext, AnalysisRunner}
 import com.amazon.deequ.metrics.{Metric}
 
@@ -165,7 +169,41 @@ trait APIs extends SparkTools
           useLocalMetricRepository(metricFileName).run >>=
             useRepositoryOnRunner.run
     
-      (verifier.runA(builder) >>= saveMetricsToRepository(prop)(new ResultKeyBuilder{}).runS).value.run
+      (verifier.runA(builder) >>= saveMetricsToRepository(prop)(new ResultKeyBuilder{val time: Long = System.currentTimeMillis}).runS).value.run
+    }
+  case class Attribute[S <: DState[S]](timeKey : Long,
+                                       prop: Map[String,String],
+                                       strategy: AnomalyDetectionStrategy,
+                                       analyzer: Option[Analyzer[S, Metric[Double]]])
+ 
+  /**
+   * The idea is to have a state machine which allows the developer to compose
+   * a computation that leverages the [[MetricsRepository]].
+   *
+   * @param time
+   * @param prop 
+   * @param strategy
+   * @analyzer
+   */
+  def buildAnomalyDetection[S <: DState[S]](someMetricsRepo: Option[MetricsRepository],
+                                            timeKey : Long,
+                                            prop: Map[String,String],
+                                            strategy: AnomalyDetectionStrategy,
+                                            analyzer: Option[Analyzer[S, Metric[Double]]]) : Reader[DataFrame, (VerificationResult, MetricsRepository)] =
+    Reader{ (df: DataFrame) =>
+      val metricsRepository = new InMemoryMetricsRepository()
+      val vr : VerificationRunBuilder = defaultVerifier(df)
+      def F : Reader[MetricsRepository, (VerificationResult,MetricsRepository)] =
+        Reader{(repo: MetricsRepository) =>
+          val f =
+              useRepositoryOnRunner(repo).runA(vr) >>=
+                saveMetricsToRepository(prop)(new ResultKeyBuilder{val time : Long = timeKey}).runA >>=
+                  addAnomalyChecks(analyzer)(strategy).runA
+          (f.value.run, repo)
+        }
+     
+      if (someMetricsRepo.nonEmpty) F.run(someMetricsRepo.get)
+      else F.run(new InMemoryMetricsRepository())
     }
 
   /**

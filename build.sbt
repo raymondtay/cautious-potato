@@ -9,6 +9,7 @@ version := "1.0"
 libraryDependencies ++= myLibraryDependencies
 
 scalacOptions += "-Ypartial-unification"
+scalacOptions += "-deprecation"
 
 enablePlugins(TutPlugin)
 
