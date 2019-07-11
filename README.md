@@ -50,5 +50,7 @@ again via `sbt`.
 
 [Analyzing Data](docs/analyzer.md)
 
+[Detecting Anomalies in the Data](docs/anomalydetector.md)
+
 
 
