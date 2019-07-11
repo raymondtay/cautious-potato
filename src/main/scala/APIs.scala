@@ -171,11 +171,7 @@ trait APIs extends SparkTools
     
       (verifier.runA(builder) >>= saveMetricsToRepository(prop)(new ResultKeyBuilder{val time: Long = System.currentTimeMillis}).runS).value.run
     }
-  case class Attribute[S <: DState[S]](timeKey : Long,
-                                       prop: Map[String,String],
-                                       strategy: AnomalyDetectionStrategy,
-                                       analyzer: Option[Analyzer[S, Metric[Double]]])
- 
+
   /**
    * The idea is to have a state machine which allows the developer to compose
    * a computation that leverages the [[MetricsRepository]].
@@ -191,7 +187,6 @@ trait APIs extends SparkTools
                                             strategy: AnomalyDetectionStrategy,
                                             analyzer: Option[Analyzer[S, Metric[Double]]]) : Reader[DataFrame, (VerificationResult, MetricsRepository)] =
     Reader{ (df: DataFrame) =>
-      val metricsRepository = new InMemoryMetricsRepository()
       val vr : VerificationRunBuilder = defaultVerifier(df)
       def F : Reader[MetricsRepository, (VerificationResult,MetricsRepository)] =
         Reader{(repo: MetricsRepository) =>

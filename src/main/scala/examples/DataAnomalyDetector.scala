@@ -35,41 +35,37 @@ object DataAnomalyDetector extends App with APIs {
   val yesterday = System.currentTimeMillis() - 24 * 60 * 1000
   val today = System.currentTimeMillis()
 
-  // A [[Analyzer]] in Deequ parlance is a runtime activity that runs the
-  // analysis desired against the data.
-  //
-  val analyzer : Analysis =
-    buildAnalyzers(Size(),
-      ApproxCountDistinct("housing_median_age"),
-      Completeness("housing_median_age"),
-      Completeness("longitude"),
-      Completeness("latitude")).run(Analysis())
-
   def traceDataAnalysisWithLocalStorage = {
-      Either.catchNonFatal{
-        val (verificationResult1, repo) = 
-          traceLoadCsvEffectNClose(
-            sys.env("TMPDIR"),
-            "src/main/resources/bad_data.csv", // data here is bad....
-            buildAnomalyDetection(none,
+    Either.catchNonFatal{
+      val (verificationResult1, repo) = 
+        traceLoadCsvEffectNClose(
+          sys.env("TMPDIR"),
+          "src/main/resources/bad_data.csv", // data here is bad....
+          buildAnomalyDetection(none,
                                 yesterday, // represents yesterday
                                 Map(),
                                 RateOfChangeStrategy(maxRateIncrease = Some(2.0)),
                                 Size().some).run)
-        val (verificationResult2, repo2) = 
-          traceLoadCsvEffectNClose(
-            sys.env("TMPDIR"),
-            "src/main/resources/bad_data2.csv", // data here is bad....
-            buildAnomalyDetection(repo.some,
+      val (verificationResult2, repo2) = 
+        traceLoadCsvEffectNClose(
+          sys.env("TMPDIR"),
+          "src/main/resources/bad_data2.csv", // data here is worse than bad
+          buildAnomalyDetection(repo.some,
                                 today, // represents today
                                 Map(),
                                 RateOfChangeStrategy(maxRateIncrease = Some(2.0)),
                                 Size().some).run)
 
-       if (verificationResult2.status != Success) println("Anomaly detected in the Size() metric!")
-       else println("we are done.")
- 
+      if (verificationResult2.status != Success) {
+        println("Anomaly detected in the Size() metric!")
+        getSparkSession(sys.env("TMPDIR")) >>=
+          {(session: SparkSession) => 
+              repo2.load().forAnalyzers(Seq(Size())).getSuccessMetricsAsDataFrame(session).show()
+          }
       }
+      else println("we are done.")
+ 
+    }
   }
 
   if (!args.headOption.isEmpty && args.headOption.get.equalsIgnoreCase("trace-anomaly"))
