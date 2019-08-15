@@ -103,4 +103,6 @@ object DataAnalyzer extends App with APIs {
         }
 }
 ```
+To run it via `sbt console`, enter either `run trace-analysis` or `run trace-analysis-store-locally`
+and select the appropriate program.
 

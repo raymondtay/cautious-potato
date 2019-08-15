@@ -56,4 +56,23 @@ object DataProfiler extends App with APIs {
 }
 
 ```
+To run it from the `sbt console`, you need to enter `run` and select this
+particular application and once completed, you should see the following:
+```
+...
+19/08/15 18:27:41 INFO DAGScheduler: ResultStage 12 (countByKey at ColumnProfiler.scala:547) finished in 0.010 s
+19/08/15 18:27:41 INFO DAGScheduler: Job 6 finished: countByKey at ColumnProfiler.scala:547, took 0.192057 s
+Statistics of 'housing_median_age':
+	minimum: 1.0
+	maximum: 52.0
+	mean: 28.639486434108527
+	standard deviation: 12.585252725724587
 
+19/08/15 18:27:41 INFO MapOutputTrackerMasterEndpoint: MapOutputTrackerMasterEndpoint stopped!
+19/08/15 18:27:41 INFO MemoryStore: MemoryStore cleared
+19/08/15 18:27:41 INFO BlockManager: BlockManager stopped
+19/08/15 18:27:41 INFO BlockManagerMaster: BlockManagerMaster stopped
+19/08/15 18:27:41 INFO OutputCommitCoordinator$OutputCommitCoordinatorEndpoint: OutputCommitCoordinator stopped!
+19/08/15 18:27:41 INFO SparkContext: Successfully stopped SparkContext
+19/08/15 18:27:41 WARN FileSystem: exception in the cleaner thread but it will continue to run
+```

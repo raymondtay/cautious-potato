@@ -96,4 +96,18 @@ object DataAnomalyDetector extends App with APIs {
 
 }
 ```
+To run it via `sbt console`, enter `run trace-anomaly` and select the
+appropriate program and you should see the following :
+```
+...
+19/08/15 20:50:41 INFO DAGScheduler: ResultStage 1 (show at DataAnomalyDetector.scala:63) finished in 0.011 s
+19/08/15 20:50:41 INFO DAGScheduler: Job 1 finished: show at DataAnomalyDetector.scala:63, took 0.037605 s
++-------+--------+----+-----+-------------+
+| entity|instance|name|value| dataset_date|
++-------+--------+----+-----+-------------+
+|Dataset|       *|Size| 66.0|1565871994698|
+|Dataset|       *|Size| 89.0|1565873434698|
++-------+--------+----+-----+-------------+
+...
+```
 

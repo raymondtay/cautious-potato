@@ -44,6 +44,14 @@ Below is an diagram i have setup on my local development machine:
 is legitimate. If you like to re-generate the code docs, please re-run `tut`
 again via `sbt`.
 
+**CAUTION**: You need to take note is that this project is dependent on
+Apache Spark which inturn is dependent on `OpenJDK 1.8` or the equivalent
+of `Oracle JDK 1.8` (I'm not disencouraging you to use the Oracle JDK, of course).
+
+You are invited to look over each of the crafted examples to see how you can
+trigger the analysis using some dummy data i have prepared in the
+`src/main/resources` directory.
+
 [Profiling Data](docs/profiler.md)
 
 [Verifying Data](docs/verification.md)

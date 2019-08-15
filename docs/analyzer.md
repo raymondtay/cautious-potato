@@ -114,4 +114,6 @@ scala> /**
      | }
 defined object DataAnalyzer
 ```
+To run it via `sbt console`, enter either `run trace-analysis` or `run trace-analysis-store-locally`
+and select the appropriate program.
 

@@ -105,3 +105,29 @@ object DataVerifier extends App with APIs {
 }
 ```
 
+To run it from `sbt console`, run either `run no-trace` to see a vanilla run or
+`run trace` to see a traced run; once you select the appropriate example, you
+should see the following :
+
+```
+...
+19/08/15 18:32:45 INFO CodeGenerator: Code generated in 20.171392 ms
+19/08/15 18:32:45 INFO CodeGenerator: Code generated in 8.626454 ms
+19/08/15 18:32:45 INFO CodeGenerator: Code generated in 6.596286 ms
++-------+------------------+------------+------------------+
+| entity|          instance|        name|             value|
++-------+------------------+------------+------------------+
+| Column|     median_income|Completeness|0.6818181818181818|
+| Column|housing_median_age|Completeness|               1.0|
+| Column|       total_rooms|Completeness|               1.0|
+| Column|median_house_value|Completeness|0.6818181818181818|
+|Dataset|                 *|        Size|              66.0|
+| Column|        population|Completeness|0.6818181818181818|
+| Column|        households|Completeness|0.6818181818181818|
+| Column|   ocean_proximity|Completeness|0.6818181818181818|
+| Column|         longitude|Completeness|               1.0|
+| Column|          latitude|Completeness|               1.0|
++-------+------------------+------------+------------------+
+...
+```
+
